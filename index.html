@@ -68,7 +68,8 @@ const xp=w=>SY.find(g=>g.some(t=>w===t||(t.length>2&&(w.includes(t)||(w.length>2
 const lsearch=(q,L)=>{const ws=NQ(q).split(' ').filter(w=>w.length>1&&!SW.includes(w));if(!ws.length)return L.map(p=>({p,s:[]}));const ts=ws.flatMap(xp);
  return L.map(p=>{const h=NQ(hay(p)),sc=ws.filter(w=>xp(w).some(t=>h.includes(t))).length;if(!sc)return null;const s=[p.cov,p.ex,p.full,p.steps,p.docs,p.note].join('\n').split('\n').filter(l=>l.trim()&&ts.some(t=>NQ(l).includes(t))).slice(0,5);return{p,s,sc}}).filter(Boolean).sort((a,b)=>b.sc-a.sc)};
 const phs=p=>String(p.ph||'').split('\n').filter(Boolean).map(l=>{const m=l.match(/\*?\d[\d\- ]{2,}\d/);return m?`<a class="btn o" href="tel:${ph(m[0])}">📞 ${esc(l)}</a>`:`<div class="m">${esc(l)}</div>`}).join('');
-const imV=()=>bar('ייבוא פוליסה')+`<p class="m">שלח ל-Claude בצ׳אט את הפוליסה (PDF או תמונה) וכתוב: חלץ לכספת. הדבק כאן את ה-JSON שתקבל.</p><textarea id="imt" rows="10"></textarea><button class="btn" onclick="imp()">ייבא לכספת</button>`;
+const imV=()=>bar('ייבוא פוליסה')+`<p class="m">דרך חינמית ומדויקת: 1) לחץ "העתק הנחיה". 2) פתח צ׳אט של Claude, Gemini או ChatGPT, הדבק והעלה את הפוליסה. 3) העתק את ה-JSON שקיבלת ולחץ "הדבק מהלוח".</p><button class="btn" onclick="cp(SC+'\nהחזר JSON בלבד. הפוליסה מצורפת.')">📋 העתק הנחיית סריקה</button><textarea id="imt" rows="8" style="margin-top:10px"></textarea><button class="btn o" onclick="pst()">📋 הדבק מהלוח</button><button class="btn" onclick="imp()">ייבא לכספת</button>`;
+const pst=async()=>{try{$('#imt').value=await navigator.clipboard.readText()}catch(e){toast('הדבק ידנית בתיבה')}};
 async function imp(){try{const m=$('#imt').value.match(/[\[{][\s\S]*[\]}]/);let o=JSON.parse(m[0]);o=Array.isArray(o)?o:[o];const L=x=>Array.isArray(x)?x.join('\n'):x==null?'':String(x);
  for(const x of o)S.p.unshift({id:Date.now()+''+Math.floor(Math.random()*1e4),type:T[x.type]?x.type:'אחר',co:L(x.co),num:L(x.num),asset:L(x.asset),end:L(x.end),prem:L(x.prem),ded:L(x.ded),cl:L(x.cl),agn:L(x.agn),ag:L(x.ag),prod:L(x.prod),start:L(x.start),who:L(x.who),notice:L(x.notice),cov:L(x.cov),ex:L(x.ex),note:L(x.note),steps:L(x.steps),docs:L(x.docs),ph:L(x.ph),full:L(x.full),f:[]});
  await save();toast('יובאו '+o.length+' פוליסות');nav('home')}catch(e){toast('ה-JSON לא תקין')}}
@@ -143,23 +144,58 @@ async function rst(){try{const r=JSON.parse($('#rs').value);if(!r.s||!r.i||!r.d)
 
 const d2b=d=>{const[h,x]=d.split(','),a=atob(x),u=new Uint8Array(a.length);for(let k=0;k<a.length;k++)u[k]=a.charCodeAt(k);return new Blob([u],{type:h.match(/:(.*?);/)[1]})};
 const SC=`אתה מחלץ נתונים ממסמכי פוליסות ביטוח בישראל. החזר JSON בלבד, אובייקט אחד עם השדות: type (אחד מ: רכב, דירה, בריאות, חיים, נסיעות, תאונות, אחר), co (חברת הביטוח), num (מספר פוליסה), asset (הפריט המבוטח: מס׳ רכב, כתובת או שם המבוטח), end (תוקף עד, בפורמט YYYY-MM-DD), prem (פרמיה חודשית בש״ח, מספר בלבד; אם היא שנתית חלק ל-12), ded (השתתפות עצמית), cl (טלפון מוקד תביעות), agn (שם הסוכן), ag (טלפון הסוכן), cov (מערך מחרוזות בפורמט שם הכיסוי — סכום או תנאי), ex (מערך חריגים עיקריים), note (תנאים חשובים: מועד הודעה על אירוע, מסמכים נדרשים, טלפונים נוספים). בנוסף: start (תחילת תוקף YYYY-MM-DD), prod (שם המוצר או התכנית), who (מבוטחים ונהגים מורשים), notice (תוך כמה זמן ולמי חייבים להודיע על אירוע), steps (תהליך הגשת תביעה צעד אחר צעד), docs (מסמכים נדרשים לתביעה), ph (מערך טלפונים נוספים בפורמט שם: מספר, כמו חירום, גרירה, שירות לקוחות, וגם מייל לתביעות), full (תקציר מפורט וממצה של כל סעיפי הפוליסה: סכומים, תנאים, הגבלות, תקופות אכשרה, השתתפויות וביטול, כדי שאפשר יהיה לחפש בו בלי לקרוא שוב את המסמך). אל תמציא: שדה שלא מופיע במסמך יהיה ריק. אם קיבלת נתונים קודמים, השלם ועדכן אותם.`;
+
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const TY=[['רכב',/רכב|מקיף|חובה|צד ג|גרירה|שמשה/g],['דירה',/דירה|תכולה|מבנה|צנרת|פריצה/g],['בריאות',/בריאות|ניתוח|אשפוז|תרופות|שיניים/g],['חיים',/ביטוח חיים|ריסק|פטירה|אובדן כושר/g],['נסיעות',/נסיעות|חו["״]ל|כבודה|טיסה/g],['תאונות',/תאונות אישיות/g]];
+const iso=(d,m,y)=>{y=+y;if(y<100)y+=2000;return y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0')};
+const fixRtl=t=>{const rev=(t.match(/הסילופ|חוטיב|יוסיכ/g)||[]).length,ok=(t.match(/פוליסה|ביטוח|כיסוי/g)||[]).length;return rev>ok?t.replace(/[\u0590-\u05ff]+/g,w=>[...w].reverse().join('')):t};
+function heur(t){const o={full:t.slice(0,20000)},co=CO.find(c=>t.includes(c));if(co)o.co=co;
+ let bt=0;for(const[n,re]of TY){const c=(t.match(re)||[]).length;if(c>bt){bt=c;o.type=n}}
+ const pn=t.match(/(?:מס(?:פר|['׳])?\s*פוליסה|פוליסה\s*(?:מס(?:פר|['׳])?)?)\s*[:\-]?\s*(\d[\d\-\/]{4,14})/);if(pn)o.num=pn[1];
+ const ds=[...t.matchAll(/(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/g)].filter(m=>+m[2]<=12&&+m[1]<=31).map(m=>({d:iso(m[1],m[2],m[3]),c:t.slice(Math.max(0,m.index-30),m.index)}));
+ const e=ds.find(x=>/עד|תום|סיום|פקיע/.test(x.c))||ds.slice().sort((a,b)=>a.d<b.d?1:-1)[0],s0=ds.find(x=>/מתאריך|תחילת|החל מ/.test(x.c));
+ if(e)o.end=e.d;if(s0)o.start=s0.d;
+ const seen=new Set(),ph=[];for(const m of t.matchAll(/\*\d{3,4}|0\d{1,2}[-\s]?\d{3}[-\s]?\d{4}|1[-\s]?[78]00[-\s]?\d{3}[-\s]?\d{3}/g)){const n=m[0].replace(/\s/g,'');if(seen.has(n))continue;seen.add(n);ph.push({n,c:t.slice(Math.max(0,m.index-25),m.index).split('\n').pop().replace(/[:\s]+$/,'').trim()})}
+ const cl=ph.find(x=>/תביע/.test(x.c));if(cl)o.cl=cl.n;
+ const ma=[...new Set(t.match(/[\w.+-]+@[\w-]+\.[\w.]+/g)||[])].slice(0,3);
+ o.ph=[...ph.slice(0,6).map(x=>(x.c||'טלפון')+': '+x.n),...ma.map(x=>'מייל: '+x)].join('\n');
+ const L=t.split('\n').map(l=>l.trim()).filter(Boolean);
+ o.cov=L.filter(l=>/₪|ש["״]ח|שקל/.test(l)&&l.length<140).slice(0,30).join('\n');
+ const dd=t.match(/השתתפות עצמית[^\d]{0,25}([\d,]+)/);if(dd)o.ded=dd[1];
+ const pm=t.match(/פרמיה[^\d]{0,30}([\d,]+(?:\.\d+)?)/);if(pm)o.prem=pm[1].replace(/,/g,'');
+ const nt=L.find(l=>/להודיע|הודעה על|תוך \d+ (?:ימים|שעות|יום)/.test(l));if(nt)o.notice=nt.slice(0,200);
+ return o}
+
 function pJ(t){const m=String(t).match(/[\[{][\s\S]*[\]}]/);if(!m)throw{code:'תשובה לא תקינה'};return JSON.parse(m[0])}
+const need=src=>new Promise((ok,no)=>{if(document.querySelector('script[src="'+src+'"]'))return ok();const e=document.createElement('script');e.src=src;e.onload=ok;e.onerror=()=>no({code:'לא ניתן לטעון רכיב סריקה (בדוק אינטרנט)'});document.head.appendChild(e)});
+const PJ='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf';
+async function pdfDoc(f){await need(PJ+'.min.js');pdfjsLib.GlobalWorkerOptions.workerSrc=PJ+'.worker.min.js';return pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise}
+async function pdfText(f){const d=await pdfDoc(f);let t='';for(let i=1;i<=d.numPages;i++){const c=await(await d.getPage(i)).getTextContent();let y=null,l='';for(const it of c.items){const yy=it.transform[5];if(y!==null&&Math.abs(yy-y)>3){t+=l+'\n';l=''}y=yy;l+=it.str+' '}t+=l+'\n'}return t}
+async function ocrImg(u,st){await need('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');return(await Tesseract.recognize(u,'heb+eng',{logger:m=>{if(m.status==='recognizing text')st.textContent='קורא טקסט מהתמונה… '+Math.round(m.progress*100)+'%'}})).data.text}
+async function pdfOcr(f,st){const d=await pdfDoc(f);let t='';for(let i=1;i<=Math.min(d.numPages,5);i++){const g=await d.getPage(i),v=g.getViewport({scale:2}),c=document.createElement('canvas');c.width=v.width;c.height=v.height;await g.render({canvasContext:c.getContext('2d'),viewport:v}).promise;t+=await ocrImg(c.toDataURL('image/jpeg',.8),st)+'\n'}return t}
+async function lscan(fs,st){let t='';for(const f of fs){st.textContent='קורא טקסט מהקובץ…';let x;if(f.type==='application/pdf'){x=await pdfText(f);if(x.replace(/\s/g,'').length<80)x=await pdfOcr(f,st)}else x=await ocrImg(await shrink(await rd(f)),st);t+=x+'\n'}return heur(fixRtl(t))}
 async function aiCall(p,files=[],json){
  if(!S.key)throw{code:'חסר מפתח API. הוסף בהגדרות'};
- try{let r,j;
- if((S.pv||'g')==='g'){r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+(S.gm||'gemini-flash-latest')+':generateContent?key='+encodeURIComponent(S.key),{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:p},...files.map(f=>({inlineData:{mimeType:f.t,data:f.b}}))]}],generationConfig:json?{responseMimeType:'application/json'}:{}})});j=await r.json();if(!r.ok)throw{code:(j.error&&j.error.message)||r.status};return j.candidates[0].content.parts.map(x=>x.text||'').join('')}
- r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':S.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:S.cm||'claude-sonnet-5-5',max_tokens:8000,messages:[{role:'user',content:[...files.map(f=>({type:f.t==='application/pdf'?'document':'image',source:{type:'base64',media_type:f.t,data:f.b}})),{type:'text',text:p}]}]})});j=await r.json();if(!r.ok)throw{code:(j.error&&j.error.message)||r.status};return j.content.map(x=>x.text||'').join('')
- }catch(e){throw e.code?e:{code:'שגיאת רשת: '+(e.message||'')}}}
+ let r,j;
+ if((S.pv||'g')==='g'){const ms=[...new Set([S.gm||'gemini-flash-latest','gemini-2.5-flash','gemini-2.5-flash-lite','gemini-2.0-flash'])];let er={code:'שגיאה'};
+  const body=JSON.stringify({contents:[{parts:[{text:p},...files.map(f=>({inlineData:{mimeType:f.t,data:f.b}}))]}],generationConfig:json?{responseMimeType:'application/json'}:{}});
+  for(const m of ms)for(let a=0;a<2;a++){
+   try{r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent?key='+encodeURIComponent(S.key),{method:'POST',headers:{'content-type':'application/json'},body});j=await r.json()}catch(e){er={code:'שגיאת רשת'};await sleep(1500);continue}
+   if(r.ok)return j.candidates[0].content.parts.map(x=>x.text||'').join('');
+   er={code:(j.error&&j.error.message)||r.status};if(![404,429,500,503].includes(r.status))throw er;if(r.status!==404)await sleep(1500)}
+  throw er}
+ try{r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':S.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:S.cm||'claude-sonnet-5-5',max_tokens:8000,messages:[{role:'user',content:[...files.map(f=>({type:f.t==='application/pdf'?'document':'image',source:{type:'base64',media_type:f.t,data:f.b}})),{type:'text',text:p}]}]})});j=await r.json()}catch(e){throw{code:'שגיאת רשת'}}
+ if(!r.ok)throw{code:(j.error&&j.error.message)||r.status};return j.content.map(x=>x.text||'').join('')}
 const AI=Object.assign(async(p,o={})=>({text:await aiCall(p,o.files)}),{json:async(p,o={})=>pJ(await aiCall(p,o.files,true))});
 async function scan(i){const fs=[...i.files],st=$('#ss');i.value='';
- try{st.textContent='מכין את המסמכים…';const files=[],at=[];
-  for(const f of fs){if(f.type==='application/pdf'){if(f.size>15e6)throw{code:'קובץ PDF גדול מדי (עד 15MB)'};const d=await rd(f);files.push({t:f.type,b:d.split(',')[1]});if(f.size<=3e6)at.push({n:f.name,d})}
-   else{const d=await shrink(await rd(f));files.push({t:'image/jpeg',b:d.split(',')[1]});at.push({n:f.name,d})}}
-  st.textContent='קורא את הפוליסה… (עד דקה)';
-  const o=await AI.json(SC,{files}),L=x=>Array.isArray(x)?x.join('\n'):x||'';
+ try{st.textContent='מכין את המסמכים…';const at=[];let o=null;
+  for(const f of fs){if(f.type==='application/pdf'){if(f.size<=3e6)at.push({n:f.name,d:await rd(f)})}else at.push({n:f.name,d:await shrink(await rd(f))})}
+  if(S.key){try{st.textContent='קורא את הפוליסה בענן… (עד דקה)';const files=[];for(const f of fs){if(f.type==='application/pdf'){if(f.size>15e6)throw{code:'PDF גדול מדי'};files.push({t:f.type,b:(await rd(f)).split(',')[1]})}else files.push({t:'image/jpeg',b:(await shrink(await rd(f))).split(',')[1]})}o=await AI.json(SC,{files})}catch(e){toast('ה-AI נכשל, עוברים לסריקה מקומית חינמית');o=null}}
+  if(!o){o=await lscan(fs,st);o.note='חולץ מקומית בלי AI. בדוק את כל השדות והשלם ידנית.'}
+  const L=x=>Array.isArray(x)?x.join('\n'):x||'';
   DR={...o,cov:L(o.cov),ex:L(o.ex),note:L(o.note),steps:L(o.steps),docs:L(o.docs),ph:L(o.ph),who:L(o.who),full:L(o.full),notice:L(o.notice),f:at};edit=null;st.textContent='';toast('חולץ. בדוק ושמור');nav('f')
  }catch(e){st.textContent='הסריקה נכשלה: '+(e.code||e.message||'שגיאה')}}
-const stV=()=>bar('הגדרות AI')+`<p class="m">המפתח נשמר מוצפן בכספת. סריקה, ניתוח עמוק וכתב תביעה שולחים את תוכן הפוליסות לספק שתבחר. מומלץ מפתח בחשבון עם חיוב פעיל, כי בתוכנית החינמית של Google ייתכן שימוש בנתונים לשיפור המוצרים.</p><label>ספק</label><select id="pv"><option value="g"${S.pv!=='c'?' selected':''}>Google Gemini</option><option value="c"${S.pv==='c'?' selected':''}>Claude (Anthropic)</option></select><label>מפתח API</label><input id="ky" type="password" value="${esc(S.key)}" autocomplete="off"><label>מודל (אופציונלי)</label><input id="md" placeholder="gemini-flash-latest / claude-sonnet-5-5" value="${esc(S.pv==='c'?S.cm:S.gm)}"><button class="btn" onclick="sk()">שמור</button><button class="btn o" onclick="tk()">בדוק חיבור</button>`;
+const stV=()=>bar('הגדרות AI')+`<p class="m">בלי מפתח הסריקה פועלת מקומית וחינם (פחות מדויקת). המפתח נשמר מוצפן בכספת. סריקה, ניתוח עמוק וכתב תביעה שולחים את תוכן הפוליסות לספק שתבחר. מומלץ מפתח בחשבון עם חיוב פעיל, כי בתוכנית החינמית של Google ייתכן שימוש בנתונים לשיפור המוצרים.</p><label>ספק</label><select id="pv"><option value="g"${S.pv!=='c'?' selected':''}>Google Gemini</option><option value="c"${S.pv==='c'?' selected':''}>Claude (Anthropic)</option></select><label>מפתח API</label><input id="ky" type="password" value="${esc(S.key)}" autocomplete="off"><label>מודל (אופציונלי)</label><input id="md" placeholder="gemini-flash-latest / claude-sonnet-5-5" value="${esc(S.pv==='c'?S.cm:S.gm)}"><button class="btn" onclick="sk()">שמור</button><button class="btn o" onclick="tk()">בדוק חיבור</button>`;
 async function sk(){S.pv=$('#pv').value;S.key=$('#ky').value.trim();const m=$('#md').value.trim();if(S.pv==='c')S.cm=m;else S.gm=m;await save();toast('נשמר')}
 async function tk(){await sk();try{await aiCall('Reply with: OK');toast('החיבור תקין ✅')}catch(e){toast('נכשל: '+(e.code||''))}}
 const pj=()=>JSON.stringify(S.p.map(p=>({id:p.id,type:p.type,co:p.co,num:p.num,asset:p.asset,end:p.end,ded:p.ded,cl:p.cl,ag:p.ag,cov:p.cov,ex:p.ex,note:p.note})));
