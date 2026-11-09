@@ -64,9 +64,29 @@ const keyOf=async(pw,s)=>{const m=await crypto.subtle.importKey('raw',enc.encode
 const db=()=>new Promise((ok,no)=>{const r=indexedDB.open('kaspet',1);r.onupgradeneeded=()=>r.result.createObjectStore('k');r.onsuccess=()=>ok(r.result);r.onerror=no});
 const idbGet=async k=>{const d=await db();return new Promise((ok,no)=>{const q=d.transaction('k').objectStore('k').get(k);q.onsuccess=()=>ok(q.result);q.onerror=no})};
 const idbSet=async(k,v)=>{const d=await db();return new Promise((ok,no)=>{const t=d.transaction('k','readwrite');t.objectStore('k').put(v,k);t.oncomplete=ok;t.onerror=no})};
-const BUILD='4.1.1 · 09.11.2026';
+const BUILD='4.2.0 · 09.11.2026';
 const T={'רכב':'🚗','דירה':'🏠','בריאות':'🩺','שיניים':'🦷','חיים':'❤️','משכנתא':'🏦','נסיעות':'✈️','תאונות':'🛡️','סיעוד':'🧓','עסק':'🏢','אחר':'📄'};
-const CO=['הראל','מגדל','הפניקס','כלל','מנורה','AIG','שירביט','ביטוח ישיר','הכשרה','איילון','ליברה','כללית','מכבי','מאוחדת','לאומית'];
+// Local insurer directory. Names and aliases are identification hints, not policy terms.
+const CO=['הראל','מגדל','הפניקס','כלל ביטוח','מנורה מבטחים','AIG','שירביט','ביטוח ישיר (IDI)','הכשרה','איילון','ליברה','שומרה','ווישור (WeSure)','שלמה ביטוח','ביטוח חקלאי','סקוריטס','אנקור'];
+const CO_DB=[
+ {n:'הראל',a:['הראל','הראל חברה לביטוח','הראל ביטוח']},
+ {n:'מגדל',a:['מגדל','מגדל חברה לביטוח','מגדל ביטוח']},
+ {n:'הפניקס',a:['הפניקס','הפניקס חברה לביטוח','הפניקס ביטוח']},
+ {n:'כלל ביטוח',a:['כלל חברה לביטוח','כלל ביטוח','כלל ביטוח אשראי']},
+ {n:'מנורה מבטחים',a:['מנורה מבטחים ביטוח','מנורה חברה לביטוח','מנורה מבטחים','מנורה ביטוח']},
+ {n:'AIG',a:['aig israel','aig ישראל','איי אי גי','אי אי גי','aig חברה לביטוח','aig']},
+ {n:'איילון',a:['איילון חברה לביטוח','איילון ביטוח','איילון']},
+ {n:'הכשרה',a:['הכשרה חברה לביטוח','הכשרה ביטוח','הכשרה']},
+ {n:'שומרה',a:['שומרה חברה לביטוח','שומרה ביטוח','שומרה']},
+ {n:'שירביט',a:['שירביט חברה לביטוח','שירביט ביטוח','שירביט']},
+ {n:'ביטוח ישיר (IDI)',a:['איי די איי','איי.די.איי','idi ביטוח','ביטוח ישיר','ישיר איי די איי']},
+ {n:'ליברה',a:['ליברה חברה לביטוח','ליברה ביטוח','ליברה']},
+ {n:'ווישור (WeSure)',a:['ווישור חברה לביטוח','ווישור','we sure','wesure','weSure']},
+ {n:'שלמה ביטוח',a:['שלמה חברה לביטוח','שלמה ביטוח','שלמה']},
+ {n:'ביטוח חקלאי',a:['ביטוח חקלאי אגודה שיתופית','ביטוח חקלאי']},
+ {n:'סקוריטס',a:['סקוריטס חברה לביטוח','סקוריטס']},
+ {n:'אנקור',a:['אנקור חברה לביטוח','אנקור ביטוח','אנקור']}
+];
 const FL=[['co','חברת ביטוח'],['num','מספר פוליסה'],['asset','פריט מבוטח (מס׳ רכב, כתובת, שם המבוטח)'],['end','תוקף עד','date'],['prem','פרמיה (₪)','number'],['freq','תדירות תשלום','text'],['ded','השתתפות עצמית'],['cl','טלפון מוקד תביעות','tel'],['agn','שם הסוכן'],['ag','טלפון הסוכן','tel'],['prod','שם המוצר / התכנית (למשל מכבי שיניים)'],['ins','שמות המבוטחים'],['cust','בעל הפוליסה / לקוח'],['start','תחילת תוקף','date'],['notice','מועד חובה להודיע על אירוע']];
 let LASTID='',GATE=false,FID=null,SRT='exp',CU='',NV=false,QK=false,TMO=90000,AE='',REM=false,DR=null,EVT='',EVR='',S={p:[]},K=null,salt=null,R=null,V='home',F='',Q='',cur=null,edit=null,SO='',FA=[],DEL=null,H=0;
 const toast=t=>{const e=$('#t');e.textContent=t;e.style.opacity=1;setTimeout(()=>e.style.opacity=0,2400)};
@@ -201,7 +221,7 @@ function pdf(id,i){const[h,x]=P(id).f[i].d.split(',');const m=h.match(/:(.*?);/)
 async function del(id){if(DEL!==id){DEL=id;toast('לחץ שוב למחיקה סופית');return}S.p=S.p.filter(x=>x.id!==id);DEL=null;await save();nav('home');toast('נמחק')}
 
 function formV(){const p=edit||DR||{type:'רכב'};FA=[...(p.f||[])];
- return bar(edit?'עריכת פוליסה':'פוליסה חדשה')+`${DR&&DR.note?`<div class="card" style="border-color:var(--w)">ℹ️ ${esc(DR.note)}</div>`:''}${(p.un||[]).length?'<div class="card" style="border-color:var(--w)">🔍 יש שדות שדורשים בדיקה: '+(p.un||[]).map(k=>(FL.find(f=>f[0]===k)||[0,k])[1]).join(', ')+'</div>':''}<label>סוג</label><select id="type">${Object.keys(T).map(t=>`<option${t===p.type?' selected':''}>${t}</option>`).join('')}</select>`
+ return bar(edit?'עריכת פוליסה':'פוליסה חדשה')+`${DR&&DR.note?`<div class="card" style="border-color:var(--w)">ℹ️ ${esc(DR.note)}</div>`:''}${DR&&(!DR.co||DR.coConfidence!=='high')?`<div class="card" style="border-color:var(--w)"><b>בדיקת חברת הביטוח נדרשת</b><div class="m">לא זוהתה בוודאות גבוהה. אין להסתמך על ניחוש; יש לבחור את החברה לפי הכותרת/הלוגו במסמך. ${DR.coCandidates&&DR.coCandidates.length?'מועמדות אפשריות: '+DR.coCandidates.map(esc).join(', '):''}</div></div>`:''}${(p.un||[]).length?'<div class="card" style="border-color:var(--w)">🔍 יש שדות שדורשים בדיקה: '+(p.un||[]).map(k=>(FL.find(f=>f[0]===k)||[0,k])[1]).join(', ')+'</div>':''}<label>סוג</label><select id="type">${Object.keys(T).map(t=>`<option${t===p.type?' selected':''}>${t}</option>`).join('')}</select>`
  +FL.map(([k,l,ty])=>k==='freq'?`<label>${l}</label><select id="freq">${['חודשי','שנתי','רבעוני','חצי שנתי','חד פעמי'].map(x=>`<option${(p.freq||'חודשי')===x?' selected':''}>${x}</option>`).join('')}</select>`:`<label>${l}</label><input id="${k}" type="${ty||'text'}"${k==='co'?' list="cos"':k==='cust'?' list="cus"':''}${ty==='tel'?' inputmode="tel"':''}${(p.un||[]).includes(k)?' style="border-color:var(--w)"':''} value="${esc(p[k])}">`).join('')
  +`<datalist id="cos">${CO.map(c=>`<option>${c}</option>`).join('')}</datalist><datalist id="cus">${cuList().map(c=>`<option>${esc(c)}</option>`).join('')}</datalist>
 <label>מבוטחים, בעל הפוליסה ומוטבים (שורה לכל אחד)</label><textarea id="who" rows="4">${esc(p.who)}</textarea><label>כיסויים (שורה לכל כיסוי, למשל: נזקי מים — עד 100,000 ₪)</label><textarea id="cov" rows="6">${esc(p.cov)}</textarea>
@@ -229,11 +249,25 @@ const ABT=e=>e&&e.name==='AbortError';
 async function upd(){try{const t=await(await fetch(location.pathname+'?c='+Date.now(),{cache:'no-store'})).text(),m=t.match(/const BUILD='([^']+)'/);if(m&&m[1]!==BUILD){toast('נמצאה גרסה חדשה, מעדכן…');setTimeout(()=>location.replace(location.pathname+'?v='+Date.now()),800)}else toast('הגרסה עדכנית: '+BUILD)}catch(e){toast('אין חיבור לבדיקת גרסה')}}
 const shr=t=>navigator.share?navigator.share({text:t}).catch(()=>{}):cp(t);
 const Lj=x=>Array.isArray(x)?x.map(y=>y&&typeof y==='object'?Object.values(y).filter(Boolean).join(' — '):y).join('\n'):(x&&typeof x==='object'?Object.values(x).join(' — '):x==null?'':String(x));
-const findCo=t=>{const m=t.match(new RegExp('('+CO.join('|')+')\\s+(?:חברה\\s+)?לביטוח'));if(m)return m[1];const r=CO.map(c=>({c,n:(t.match(new RegExp(c==='כלל'?'כלל ביטוח':c,'g'))||[]).length})).sort((a,b)=>b.n-a.n)[0];return r&&r.n?r.c:''};
+const coNorm=s=>String(s||'').toLowerCase().replace(/[ךםןףץ]/g,c=>({'ך':'כ','ם':'מ','ן':'נ','ף':'פ','ץ':'צ'}[c])).replace(/[׳״'\".,:;()\[\]{}|\\/\-]/g,' ').replace(/\s+/g,' ').trim();
+const findCo=t=>{
+ const z=coNorm(t), head=z.slice(0,1800), ctx=['חברת הביטוח','חברה לביטוח','שם המבטח','המבטח','המבטחת','מבטח','מבטחת'];
+ const hits=[];
+ for(const c of CO_DB){let score=0,evidence='';
+  for(const a0 of c.a){const a=coNorm(a0);if(!a)continue;let at=-1,count=0,from=0;while((at=z.indexOf(a,from))!==-1&&count<8){count++;from=at+a.length;const near=z.slice(Math.max(0,at-90),Math.min(z.length,at+a.length+90));const nearHead=at<1800;const labelled=ctx.some(k=>near.includes(coNorm(k)));const legal=near.includes('בעמ')||near.includes('חברה לביטוח');let v=(a.length>=12?3:2)+Math.min(count-1,2);if(labelled)v+=5;if(legal)v+=3;if(nearHead)v+=1;if(v>score){score=v;evidence=t.slice(Math.max(0,at-55),Math.min(t.length,at+a.length+55)).replace(/\s+/g,' ').trim()}}
+  }
+  if(score)hits.push({name:c.n,score,evidence});
+ }
+ hits.sort((a,b)=>b.score-a.score);
+ if(!hits.length)return {name:'',confidence:'none',evidence:'',candidates:[]};
+ const top=hits[0],second=hits[1];
+ if(top.score<4 || (second&&top.score-second.score<2))return {name:'',confidence:'ambiguous',evidence:top.evidence,candidates:hits.slice(0,3).map(x=>x.name)};
+ return {name:top.name,confidence:top.score>=9?'high':'medium',evidence:top.evidence,candidates:hits.slice(0,3).map(x=>x.name)};
+};
 const TY=[['רכב',/רכב|מקיף|חובה|צד ג|גרירה|שמשה/g],['דירה',/דירה|תכולה|מבנה|צנרת|פריצה/g],['בריאות',/בריאות|ניתוח|אשפוז|תרופות/g],['שיניים',/שיניים|דנטל/g],['חיים',/ביטוח חיים|ריסק|פטירה|אובדן כושר/g],['נסיעות',/נסיעות|חו["״]ל|כבודה|טיסה/g],['תאונות',/תאונות אישיות/g],['סיעוד',/סיעוד/g]];
 const iso=(d,m,y)=>{y=+y;if(y<100)y+=2000;return y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0')};
 const fixRtl=t=>{const rev=(t.match(/הסילופ|חוטיב|יוסיכ/g)||[]).length,ok=(t.match(/פוליסה|ביטוח|כיסוי/g)||[]).length;return rev>ok?t.replace(/[\u0590-\u05ff]+/g,w=>[...w].reverse().join('')):t};
-function heur(t){const o={full:t.slice(0,20000),raw:t.slice(0,60000)},co=findCo(t);if(co)o.co=co;
+function heur(t){const o={full:t.slice(0,20000),raw:t.slice(0,60000),un:[]},cm=findCo(t);if(cm.name){o.co=cm.name;o.coConfidence=cm.confidence;o.coEvidence=cm.evidence;if(cm.confidence!=='high')o.un.push('co')}else{o.coCandidates=cm.candidates;o.un.push('co')}
  let bt=0;for(const[n,re]of TY){const c=(t.match(re)||[]).length;if(c>bt){bt=c;o.type=n}}if(/משכנתא/.test(t)&&(!o.type||o.type==='חיים'||o.type==='דירה'))o.type='משכנתא';
  const pn=t.match(/(?:מס(?:פר|['׳])?\s*פוליסה|פוליסה\s*(?:מס(?:פר|['׳])?)?)\s*[:\-]?\s*(\d[\d\-\/]{4,14})/);if(pn)o.num=pn[1];
  const ds=[...t.matchAll(/(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/g)].filter(m=>+m[2]<=12&&+m[1]<=31).map(m=>({d:iso(m[1],m[2],m[3]),c:t.slice(Math.max(0,m.index-30),m.index)}));
