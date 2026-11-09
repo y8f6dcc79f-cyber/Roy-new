@@ -64,7 +64,7 @@ const keyOf=async(pw,s)=>{const m=await crypto.subtle.importKey('raw',enc.encode
 const db=()=>new Promise((ok,no)=>{const r=indexedDB.open('kaspet',1);r.onupgradeneeded=()=>r.result.createObjectStore('k');r.onsuccess=()=>ok(r.result);r.onerror=no});
 const idbGet=async k=>{const d=await db();return new Promise((ok,no)=>{const q=d.transaction('k').objectStore('k').get(k);q.onsuccess=()=>ok(q.result);q.onerror=no})};
 const idbSet=async(k,v)=>{const d=await db();return new Promise((ok,no)=>{const t=d.transaction('k','readwrite');t.objectStore('k').put(v,k);t.oncomplete=ok;t.onerror=no})};
-const BUILD='4.0.0 · 09.11.2026';
+const BUILD='4.1.1 · 09.11.2026';
 const T={'רכב':'🚗','דירה':'🏠','בריאות':'🩺','שיניים':'🦷','חיים':'❤️','משכנתא':'🏦','נסיעות':'✈️','תאונות':'🛡️','סיעוד':'🧓','עסק':'🏢','אחר':'📄'};
 const CO=['הראל','מגדל','הפניקס','כלל','מנורה','AIG','שירביט','ביטוח ישיר','הכשרה','איילון','ליברה','כללית','מכבי','מאוחדת','לאומית'];
 const FL=[['co','חברת ביטוח'],['num','מספר פוליסה'],['asset','פריט מבוטח (מס׳ רכב, כתובת, שם המבוטח)'],['end','תוקף עד','date'],['prem','פרמיה (₪)','number'],['freq','תדירות תשלום','text'],['ded','השתתפות עצמית'],['cl','טלפון מוקד תביעות','tel'],['agn','שם הסוכן'],['ag','טלפון הסוכן','tel'],['prod','שם המוצר / התכנית (למשל מכבי שיניים)'],['ins','שמות המבוטחים'],['cust','בעל הפוליסה / לקוח'],['start','תחילת תוקף','date'],['notice','מועד חובה להודיע על אירוע']];
@@ -136,7 +136,36 @@ function miss(p){const m=[];if(!p.num)m.push('מספר פוליסה');if(!p.end)
 const cmpS=(a,b)=>SRT==='co'?String(a.p.co).localeCompare(String(b.p.co),'he'):SRT==='type'?String(a.p.type).localeCompare(String(b.p.type),'he'):String(a.p.end||'9999').localeCompare(String(b.p.end||'9999'));
 const CK={'רכב':['ודא שאין פצועים; במקרה של פציעה הזעק מד״א או משטרה','צלם את הזירה, הרכבים, לוחיות הרישוי והנזקים','החלף פרטים עם הצד השני: שם, ת.ז., רישיון וביטוח','הודע למבטח בהקדם ובדוק בפוליסה את המועד המחייב','שמור פרטי עדים ואל תחתום על הודאה באשמה'],'דירה':['צמצם את הנזק: סגור ברז ראשי ונתק חשמל אם יש סכנה','צלם ותעד את כל הנזקים לפני ניקוי או תיקון','הודע למבטח לפני תיקונים משמעותיים','שמור קבלות, הצעות מחיר ורשימת פריטים שניזוקו'],'בריאות':['שמור את כל המסמכים הרפואיים והקבלות','לפני ניתוח או אשפוז מתוכננים בקש מהמבטח התחייבות','בדוק בפוליסה תקופות אכשרה והשתתפות עצמית'],'נסיעות':['פנה למוקד החירום של המבטח לפני טיפול או הוצאה גדולה','שמור קבלות ואישורי חברת התעופה','על גניבה או אובדן דווח למשטרה המקומית וקבל אישור'],'חיים':['הודע למבטח ולסוכן ושמור תעודת פטירה ומסמכים רפואיים','בדוק מי המוטבים בפוליסה והאם קיים שעבוד לבנק'],'משכנתא':['הודע לבנק ולמבטח בהקדם','בדוק מי המוטב (לרוב הבנק) ומה נדרש להגשת תביעה'],'שיניים':['בדוק תקרת כיסוי, השתתפות עצמית ותקופת אכשרה לפני טיפול','בקש תוכנית טיפול והצעת מחיר בכתב'],'תאונות':['שמור מסמכים רפואיים ותיעוד האירוע','הודע למבטח בהקדם ובדוק בפוליסה מועדי הודעה']};
 const ckH=t=>CK[t]?`<div class="card"><b>מה עושים עכשיו (הנחיות כלליות)</b>${ul(CK[t].join('\n'))}<div class="m">בדוק מועדים ותנאים בפוליסה עצמה.</div></div>`:'';
-async function ics(id){const p=P(id);if(!p.end)return;const d=new Date(p.end+'T09:00:00');d.setDate(d.getDate()-30);const f=x=>x.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z',e=new Date(d.getTime()+36e5),t=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//kaspet//HE','BEGIN:VEVENT','UID:'+p.id+'@kaspet','DTSTAMP:'+f(new Date()),'DTSTART:'+f(d),'DTEND:'+f(e),'SUMMARY:'+('חידוש ביטוח '+p.type+' - '+p.co).replace(/[,;]/g,' '),'DESCRIPTION:'+('פוליסה '+(p.num||'')+' פוקעת ב-'+fd(p.end)).replace(/[,;]/g,' '),'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:חידוש ביטוח','TRIGGER:-PT0M','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n'),file=new File([t],'renewal.ics',{type:'text/calendar'});try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file]});return}}catch(x){if(x.name==='AbortError')return}window.open(URL.createObjectURL(file),'_blank')}
+const icalEsc=x=>String(x==null?'':x).replace(/\\/g,'\\\\').replace(/\r?\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;');
+async function exportIOSFile(file,kind){
+ try{
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+   await navigator.share({files:[file]});
+   toast('הקובץ נשלח לחלונית השיתוף. בחר/י „שמור בקבצים” כדי לשמור אותו באייפון.');
+   return true;
+  }
+ }catch(e){if(e&&e.name==='AbortError'){toast('השיתוף בוטל');return false}}
+ try{
+  const url=URL.createObjectURL(file),a=document.createElement('a');
+  a.href=url;a.download=file.name;a.rel='noopener';a.style.display='none';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+  toast('הקובץ נוצר. אם נפתחה תצוגה, לחץ/י על שיתוף ואז „שמור בקבצים”.');
+  return true;
+ }catch(e){toast('יצירת הקובץ נכשלה: '+(e.message||e));return false}
+}
+async function ics(id){
+ const p=P(id);if(!p||!p.end){toast('חסר תאריך תום לפוליסה');return}
+ const m=String(p.end).match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m){toast('תאריך תום הפוליסה אינו תקין');return}
+ const day=new Date(Date.UTC(+m[1],+m[2]-1,+m[3]));if(Number.isNaN(day.getTime())){toast('תאריך תום הפוליסה אינו תקין');return}
+ day.setUTCDate(day.getUTCDate()-30);
+ const stamp=d=>d.getUTCFullYear()+String(d.getUTCMonth()+1).padStart(2,'0')+String(d.getUTCDate()).padStart(2,'0');
+ const dt=stamp(day),uid=String(p.id||Date.now()).replace(/[^a-zA-Z0-9._-]/g,'')||String(Date.now());
+ const now=new Date(),utc=now.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');
+ const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Kaspet Insurance Vault//HE','CALSCALE:GREGORIAN','METHOD:PUBLISH','BEGIN:VEVENT','UID:'+uid+'@kaspet.local','DTSTAMP:'+utc,'DTSTART:'+dt+'T090000','DTEND:'+dt+'T100000','SUMMARY:'+icalEsc('תזכורת חידוש ביטוח '+(p.type||'')+' - '+(p.co||'')),'DESCRIPTION:'+icalEsc('פוליסה '+(p.num||'')+' פוקעת בתאריך '+p.end),'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icalEsc('בדיקת חידוש ביטוח'),'TRIGGER:PT0M','END:VALARM','END:VEVENT','END:VCALENDAR'];
+ const file=new File([lines.join('\r\n')+'\r\n'],'kaspet-renewal-'+uid+'.ics',{type:'text/calendar;charset=utf-8'});
+ await exportIOSFile(file,'ics');
+}
 function item(p,ls=[]){const hl=l=>{let h=esc(l);for(const w of NQ(Q).split(' ').filter(w=>w.length>1))h=h.split(esc(w)).join('<mark>'+esc(w)+'</mark>');return h};
  return `<div class="card pol" style="--ac:${TC[p.type]||'var(--l)'}" onclick="cur='${p.id}';nav('p')"><div class="row">${av(p.co)}<div style="flex:1;min-width:0"><b>${esc(p.co)}</b> · ${T[p.type]||''} ${esc(p.type)}${p.prod?`<div class="m">${esc(p.prod)}</div>`:''}</div>${pill(p)}</div>${insl(p)?`<div class="kv"><span>מבוטח</span><b>${esc(insl(p))}</b></div>`:''}${per(p)?`<div class="kv"><span>תקופה</span><b>${per(p)} <span class="b" style="color:var(--m)">${rem(p)}</span></b></div>`:''}${p.num?`<div class="kv"><span>פוליסה</span><b>${esc(p.num)}</b></div>`:''}${miss(p).length?`<div class="m" style="color:var(--w);margin-top:4px">חסר: ${miss(p).slice(0,3).join(', ')}</div>`:''}${ls.map(l=>`<div class="m">• ${hl(l)}</div>`).join('')}</div>`}
 function listH(){if(!S.p.length)return `<div class="card"><b>ברוך הבא לכספת המקומית</b><ol class="ob"><li>📷 סרוק פוליסה או הוסף פרטים ידנית</li><li>בדוק כל נתון מול מסמך המקור</li><li>💾 צור גיבוי מוצפן ושמור אותו מחוץ למכשיר</li></ol><button class="btn" onclick="nav('st')">🔒 פרטיות ואבטחה</button></div>`;
@@ -162,6 +191,7 @@ function card(p,d){if(!p)return'';
 ${kv('מבוטחים',insl(p))}${kv('תקופת הביטוח',per(p)?per(p)+' ('+rem(p)+')':'')}${kv('בעל הפוליסה',p.cust)}${kv('מספר פוליסה',p.num,'num')}${kv('השתתפות עצמית',p.ded)}${kv('פרמיה',p.prem?p.prem+' ₪ · '+premiumLabel(p):'')}${kv('סוכן',p.agn)}${kv('מוצר',p.prod)}${miss(p).length?`<div class="m" style="color:var(--w)">חסר: ${miss(p).join(', ')}</div>`:'<div class="m" style="color:var(--g)">✓ הפרטים מלאים</div>'}${p.chk?`<div class="m" style="white-space:pre-wrap;margin-top:4px">${esc(p.chk)}</div>`:''}${p.notice?`<div class="card" style="border-color:var(--w)"><b>⏱ חובה להודיע:</b> ${esc(p.notice)}</div>`:''}
 <div class="acts">${p.cl?`<a class="btn r" href="tel:${ph(p.cl)}">📞 מוקד תביעות</a>`:''}${p.ag?`<a class="btn g" href="tel:${ph(p.ag)}">📞 התקשר לסוכן</a><a class="btn o" target="_blank" rel="noopener" href="${wa(p.ag)}">וואטסאפ לסוכן</a>`:''}<button class="btn" onclick="cur='${p.id}';nav('cl')">✍️ הפק כתב תביעה</button><button class="btn o" onclick="cs('${p.id}')">העתק סיכום לתביעה</button>${p.end?`<button class="btn o" onclick="ics('${p.id}')">📅 תזכורת חידוש ליומן</button>`:''}${phs(p)}</div>
 ${p.who?'<h3>מבוטחים ומוטבים</h3>'+ul(p.who):''}${p.cov?'<h3>כיסויים</h3>'+ul(p.cov):''}${p.ex?'<h3>חריגים</h3>'+ul(p.ex):''}${p.note?'<h3>הערות</h3>'+ul(p.note):''}${p.steps?'<h3>איך מגישים תביעה</h3>'+ul(p.steps):''}${p.docs?'<h3>מסמכים להכין</h3>'+ul(p.docs):''}${p.full?`<details><summary>כל פרטי הפוליסה</summary>${ul(p.full)}</details>`:''}${p.raw?`<details><summary>טקסט המקור המלא של הפוליסה</summary><div class="m" style="white-space:pre-wrap">${esc(p.raw)}</div></details>`:''}
+${d?`<div class="card" style="border-color:var(--a)"><b>🧠 ניתוח תרחיש ביטוחי מקומי</b><p class="m">תאר מקרה קונקרטי. המערכת תאתר סעיפים רלוונטיים בטקסט השמור ותציג גבולות, חריגים ותנאים שנמצאו.</p><textarea id="scenario-${p.id}" rows="3" placeholder="לדוגמה: הילד שבר בטעות טלוויזיה בסלון. האם יש כיסוי ומה התקרה?"></textarea><button class="btn" onclick="analyzePolicy('${p.id}')">נתח את המקרה</button><div id="analysis-${p.id}"></div></div>`:''}
 ${d?`${(p.f||[]).length?'<h3>קבצים</h3>':''}${(p.f||[]).map((a,i)=>a.d.startsWith('data:image')?`<img class="at" src="${a.d}" alt="${esc(a.n)}">`:`<button class="btn o" onclick="pdf('${p.id}',${i})">📄 ${esc(a.n)}</button>`).join('')}
 <div class="m">המסמכים והנתונים נשמרים מקומית בלבד.</div><div class="row"><button class="btn o" onclick="edit=P('${p.id}');nav('f')">עריכה</button><button class="btn o" style="color:var(--r)" onclick="del('${p.id}')">מחיקה</button></div>`
 :`<button class="btn o" onclick="cur='${p.id}';nav('p')">פרטים מלאים וקבצים</button>`}</div>`}
@@ -243,12 +273,30 @@ const evBox=()=>`<textarea id="evt" rows="3" placeholder="ספר מה קרה: ל
 async function ev(){evl()}
 function clV(){const p=P(cur);return bar('כתב תביעה','p')+`<div class="card"><b>${esc(p.co)} · ${esc(p.type)}</b><div class="m">${esc(p.num)}</div></div><label>שם מלא</label><input id="cn" value="${esc(S.me)}"><label>תאריך האירוע</label><input id="cd" type="date" value="${new Date().toISOString().slice(0,10)}"><label>מה קרה (ככל שיותר מפורט)</label><textarea id="ce" rows="5">${esc(EVT)}</textarea><button class="btn" onclick="gen()">✍️ הפק כתב תביעה</button><div id="co2"></div>`}
 async function gen(){const p=P(cur),o=$('#co2');S.me=$('#cn').value;await save();const txt=`לכבוד: ${p.co||'[חברת הביטוח]'}\nהנדון: הודעה על אירוע ביטוחי ובקשה לפתיחת תביעה\n\nשם המבוטח: ${S.me||'[שם מלא]'}\nמספר פוליסה: ${p.num||'[מספר פוליסה]'}\nסוג הביטוח: ${p.type||'[סוג]'}\nהנכס/הרכב/המבוטח: ${p.asset||'[פרטים]'}\nתאריך האירוע: ${$('#cd').value}\n\nתיאור האירוע:\n${$('#ce').value||'[יש לפרט את נסיבות האירוע]'}\n\nאבקש לפתוח תביעה, לאשר את קבלתה, להעביר אליי את רשימת המסמכים והפעולות הנדרשות ולפרט את הוראות הפוליסה הרלוונטיות.\n\nכיסויים שנרשמו בכספת (יש לאמת מול הפוליסה המלאה):\n${p.cov||'[לא הוזנו כיסויים]'}\n\nבברכה,\n${S.me||'[שם מלא]'}\n[טלפון]`;o.innerHTML=`<textarea id="clt" rows="18">${esc(txt)}</textarea><button class="btn" onclick="cp($('#clt').value)">העתק טיוטת הודעה</button><p class="m">זו טיוטה מקומית בלבד, לא חוות דעת משפטית ולא קביעה שהאירוע מכוסה. יש להשלים פרטים ולאמת סעיפים מול הפוליסה.</p>${p.cl?`<a class="btn r" href="tel:${ph(p.cl)}">📞 מוקד תביעות</a>`:''}`}
+
+// Evidence-led local scenario analysis. It does not call AI or send policy data online.
+const splitPolicyLines=p=>[p.raw,p.full,p.cov,p.ex,p.note,p.steps,p.docs,p.who].filter(Boolean).join('\n').split(/\n|(?<=[.;])\s+/).map(x=>x.trim()).filter(x=>x.length>8);
+const scenarioMap=[['רעידת אדמה',['רעידת אדמה','רעידה']],['מים',['מים','נזילה','צנרת','הצפה','רטיבות']],['אש',['אש','שריפה','עשן']],['גניבה',['גניבה','פריצה','שוד']],['תאונה',['תאונה','תאונתי','שבר','נשבר','נפל','פגיעה']],['עובד',['עובד','מעבידים','משק בית']],['צד שלישי',['צד שלישי','צד ג','חבות']],['אלקטרוניקה',['אלקטרוני','טלוויזיה','מחשב']],['דיור חלופי',['דיור חלופי','שכר דירה']],['תכשיטים',['תכשיט','שעון']],['טרור',['טרור','פעולת איבה']],['בלאי',['בלאי','תחזוקה','ליקוי']]];
+function analyzePolicy(id){
+ const p=P(id),q=$('#scenario-'+id)?.value||'';if(!p||!q.trim()){toast('תאר את המקרה שברצונך לבדוק');return}
+ const lines=splitPolicyLines(p),lower=q.toLowerCase(),terms=scenarioMap.filter(g=>g[1].some(w=>lower.includes(w))).flatMap(g=>g[1]);
+ const words=[...new Set((lower.match(/[א-ת]{3,}|[a-z]{3,}/g)||[]).filter(w=>!['האם','אני','שלי','היה','קרה','בגלל','במקרה','כמה','יכול','יכולה','הפוליסה'].includes(w)))];
+ const hits=lines.map(line=>({line,score:terms.filter(w=>line.toLowerCase().includes(w)).length*3+words.filter(w=>line.toLowerCase().includes(w)).length})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,10).map(x=>x.line);
+ const limits=lines.filter(l=>/(עד|גבול אחריות|סכום ביטוח|תקרת|מקסימום).{0,50}(₪|ש["״]?ח|\d{4,})/i.test(l)).slice(0,8);
+ const deduct=lines.filter(l=>/השתתפות עצמית/i.test(l)).slice(0,6);
+ const exclusions=lines.filter(l=>/חריג|לא יכוס|אינו מכוס|מוחרג|למעט|לא תחול|לא יהיה כיסוי|בלאי|מעשה מכוון/i.test(l)).slice(0,8);
+ const conditions=lines.filter(l=>/ובלבד|בתנאי|מותנה|חובה|יש להודיע|הודעה|אישור מראש|בתקופת הביטוח/i.test(l)).slice(0,8);
+ const list=(a,empty)=>a.length?'<ul>'+a.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'<p class="m">'+empty+'</p>';
+ const html='<div class="card"><b>מקרה שנבדק:</b> '+esc(q)+'<p><b>ממצא:</b> '+(hits.length?'נמצאו סעיפים שעשויים להיות רלוונטיים — אינדיקציה ראשונית בלבד.':'לא נמצאה התאמה מספקת בטקסט השמור. אין להסיק מכך שאין כיסוי.')+'</p><h3>1. סעיפים רלוונטיים</h3>'+list(hits,'לא אותרו סעיפים מתאימים.')+'<h3>2. גבולות וסכומים</h3>'+list(limits,'לא אותר גבול כספי ברור.')+'<h3>3. השתתפות עצמית</h3>'+list(deduct,'לא אותרה השתתפות עצמית מפורשת.')+'<h3>4. חריגים אפשריים</h3>'+list(exclusions,'לא אותר טקסט חריגים מספק.')+'<h3>5. תנאים וחובות</h3>'+list(conditions,'לא אותרו תנאים מפורשים.')+'<h3>6. חישוב תגמול</h3><p class="m">לא חושב פיצוי נטו באופן אוטומטי: נדרש לאמת איזה גבול ואיזו השתתפות עצמית חלים על ההרחבה הספציפית, ולבדוק נזק בפועל, בלאי, כינון ותתי-גבולות.</p><h3>7. מה עוד נדרש</h3><ul><li>תנאי הפוליסה המלאים והמהדורה המדויקת, כולל נספחים והרחבות.</li><li>אימות התאמת המבוטח, הנכס, התקופה ונסיבות האירוע.</li><li>הוכחת הנזק ושוויו והצלבה מול הגדרות וחריגים.</li></ul><div class="card" style="border-color:var(--w)"><b>הסתייגות</b><p class="m">זהו חיפוש מקומי מבוסס מילות מפתח וציטוטי מקור, לא מודל שפה ולא חוות דעת ביטוחית או משפטית. המערכת אינה מבינה במלואה הקשר, הגדרות, הפניות או סתירות. אין להסיק כיסוי או דחייה בלי בדיקה אנושית של מסמכי המקור.</p></div><button class="btn o" onclick="cp(document.getElementById(\'analysis-'+id+'\').innerText)">העתק ניתוח</button></div>';
+ $('#analysis-'+id).innerHTML=html;
+}
+
 const gateV=()=>'';
 async function fid(){toast('פתיחה באמצעות סיסמת המאסטר בלבד')}
 async function pwo(){try{await idbSet('dk',null)}catch(e){}REM=false;K=null;S={p:[]};GATE=false;render()}
 async function fidOn(){toast('Face ID אינו זמין לפתיחת הכספת בגרסה המקומית')}
 async function fidOff(){FID=null;try{await idbSet('fid',null)}catch(e){}toast('Face ID כובה');render()}
-async function bkf(){let r=null;try{r=await idbGet('v')}catch(e){}if(!r){toast('אין מה לגבות');return}S.bk=Date.now();await save();r=await idbGet('v');const txt=JSON.stringify(r),f=new File([txt],'kaspet-backup-'+new Date().toISOString().slice(0,10)+'.txt',{type:'text/plain'});try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});return}}catch(e){if(e.name==='AbortError')return}cp(txt)}
+async function bkf(){try{let r=await idbGet('v');if(!r){toast('אין מה לגבות');return}S.bk=Date.now();await save();r=await idbGet('v');const txt=JSON.stringify(r),f=new File([txt],'kaspet-backup-'+new Date().toISOString().slice(0,10)+'.txt',{type:'text/plain;charset=utf-8'});await exportIOSFile(f,'backup')}catch(e){toast('הגיבוי נכשל: '+(e.message||e))}}
 async function rsf(i){const f=i.files[0];if(!f)return;$('#rs').value=await f.text();toast('הקובץ נטען. לחץ שחזר ונעל')}
 function render(){const a=$('#app');scrollTo(0,0);if(K&&GATE){GATE=false}
  if(!K){a.innerHTML=`<div class="lock"><div style="font-size:56px">🔒</div><h1>כספת ביטוח</h1><div class="ver">v${BUILD}</div><p class="m">${R?'הזן סיסמת מאסטר':'צור סיסמת מאסטר חזקה (12 תווים לפחות). אין דרך לשחזר אותה, ואם תאבד אותה המידע אבוד.'}</p><input id="pw" type="password" placeholder="סיסמה" autocomplete="off">${R?'':'<input id="pw2" type="password" placeholder="אימות סיסמה" autocomplete="off">'}<p class="m">הכספת נפתחת בכל פעם באמצעות סיסמת המאסטר. בחר סיסמה ארוכה ושמור אותה במקום בטוח.</p><button class="btn" onclick="go()">${R?'פתח':'צור כספת'}</button><p id="er" class="m" style="color:var(--r)"></p></div>`;return}
@@ -258,4 +306,5 @@ addEventListener('unhandledrejection',e=>{try{toast('שגיאה: '+String((e.rea
 addEventListener('error',e=>{try{toast('שגיאה: '+String(e.message).slice(0,80))}catch(x){}});
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 (async()=>{try{R=await idbGet('v');const legacyKey=await idbGet('dk');if(R&&legacyKey){salt=ub(R.s);K=legacyKey;S=JSON.parse(dec.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:ub(R.i)},K,ub(R.d))));REM=true;toast('נפתחה כספת קיימת עם מפתח שמור. מומלץ לוודא שסיסמת המאסטר ידועה ולבצע גיבוי.')}else{K=null;S={p:[]};REM=false}try{await idbSet('fid',null)}catch(x){}FID=null;GATE=false}catch(e){K=null;S={p:[]};REM=false}render();try{const t=await(await fetch(location.pathname+'?c='+Date.now(),{cache:'no-store'})).text(),m=t.match(/const BUILD='([^']+)'/);if(m&&m[1]!==BUILD){NV=true;if(K)render()}}catch(e){}})();
+
 </script></body></html>
